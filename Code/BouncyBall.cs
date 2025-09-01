@@ -1,10 +1,14 @@
 using Sandbox;
+using System.Linq;
 
 namespace MightyBrick;
 
 [Title( "Classic Bouncy Ball" ), Icon( "sports_volleyball" )]
-public sealed class BouncyBall : Component, Component.IPressable, Component.INetworkSpawn
+public sealed class BouncyBall : Component, Component.INetworkSpawn, Component.IPressable
 {
+	[Property]
+	public int HealAmount { get; set; } = 10;
+
 	[Property]
 	public Color[] Colors { get; set; }
 
@@ -14,6 +18,9 @@ public sealed class BouncyBall : Component, Component.IPressable, Component.INet
 	public SphereCollider Collider { get; private set; }
 	public SpriteRenderer SpriteRenderer { get; private set; }
 
+	[Sync, Change( "OnCurrentColorChanged" )]
+	public Color CurrentColor { get; private set; }
+
 	protected override void OnAwake()
 	{
 		Collider = GetComponent<SphereCollider>();
@@ -22,7 +29,7 @@ public sealed class BouncyBall : Component, Component.IPressable, Component.INet
 
 	protected override void OnStart()
 	{
-		if ( IsProxy || !Collider.IsValid() ) 
+		if ( IsProxy ) 
 			return;
 		SetRandomScale();
 		SetRandomColor();
@@ -33,25 +40,30 @@ public sealed class BouncyBall : Component, Component.IPressable, Component.INet
 		KeepUpright();
 	}
 
+	public void OnNetworkSpawn( Connection connection )
+	{
+		Network.AssignOwnership( Rpc.Caller );
+	}
+
 	public bool Press( IPressable.Event e )
 	{
-		Eat();
+		Eat( e.Source.GameObject );
 		return true;
 	}
 
-	public void OnNetworkSpawn( Connection _ ) => Network.AssignOwnership( Rpc.Caller );
-
 	private void SetRandomScale()
 	{
+		if ( !Collider.IsValid() )
+			return;
 		WorldScale = Vector3.One * Game.Random.Float( 0.5f, 1.25f );
 		WorldPosition += Vector3.Up * Collider.Radius * WorldScale;
 	}
 
 	private void SetRandomColor()
 	{
-		if ( !SpriteRenderer.IsValid() || Colors.Length <= 0 )
+		if ( Colors.Length <= 0 )
 			return;
-		SpriteRenderer.Color = Colors[Game.Random.Int( Colors.Length - 1 )];
+		CurrentColor = Colors[Game.Random.Int( Colors.Length - 1 )];
 	}
 
 	private void KeepUpright()
@@ -62,11 +74,33 @@ public sealed class BouncyBall : Component, Component.IPressable, Component.INet
 	}
 
 	[Rpc.Broadcast]
-	private void Eat()
+	private void Eat( GameObject targetPlayer )
 	{
+		var player = targetPlayer.Components.GetAll().FirstOrDefault( c => c.GetType().Name == "Player" );
+
+		if ( player is Component comp && comp.IsValid() )
+		{
+			var playerType = TypeLibrary.GetType( player.GetType() );
+			var healthProp = playerType.GetProperty( "Health" );
+
+			if ( healthProp != null )
+			{
+				float health = (float)healthProp.GetValue( player );
+				healthProp.SetValue( player, health + HealAmount );
+			}
+		}
+
 		if ( EatSound.IsValid() )
 			Sound.Play( EatSound, WorldPosition );
+
 		if ( !IsProxy )
 			GameObject.Destroy();
+	}
+
+	private void OnCurrentColorChanged( Color oldValue, Color newValue )
+	{
+		if ( !SpriteRenderer.IsValid() )
+			return;
+		SpriteRenderer.Color = CurrentColor;
 	}
 }

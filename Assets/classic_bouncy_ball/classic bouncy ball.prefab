@@ -25,6 +25,7 @@
           "0.2,0.30196,1,1"
         ],
         "EatSound": "classic_bouncy_ball/nom.sound",
+        "HealAmount": 10,
         "OnComponentDestroy": null,
         "OnComponentDisabled": null,
         "OnComponentEnabled": null,
@@ -165,7 +166,7 @@
                 "TargetColor": "1,1,1,1",
                 "CacheToDisk": true
               },
-              "compiled": null
+              "compiled": "textures/generated/imagefile/6343401a501fd495.vtex"
             },
             "TextureFilter": "Bilinear"
           }
