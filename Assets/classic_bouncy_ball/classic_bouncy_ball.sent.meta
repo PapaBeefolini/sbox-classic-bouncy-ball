@@ -1,0 +1,21 @@
+{
+  "publish": {
+    "Enabled": true,
+    "ProjectConfig": {
+      "Title": "Classic Bouncy Ball",
+      "Type": "sent",
+      "Org": "brick",
+      "Ident": "classicbouncyball",
+      "Schema": 0,
+      "IncludeSourceFiles": false,
+      "Resources": null,
+      "PackageReferences": null,
+      "EditorReferences": null,
+      "Mounts": null,
+      "IsStandaloneOnly": false,
+      "Metadata": {
+        "SingleAssetSource": "classic_bouncy_ball/classic_bouncy_ball.sent"
+      }
+    }
+  }
+}

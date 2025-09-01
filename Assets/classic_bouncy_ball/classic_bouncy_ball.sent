@@ -1,0 +1,8 @@
+{
+  "Prefab": "classic_bouncy_ball/classic bouncy ball.prefab",
+  "Title": "Classic Bouncy Ball",
+  "Description": "An edible bouncy ball. Press USE on the bouncy ball to eat it.",
+  "IncludeCode": true,
+  "__references": [],
+  "__version": 0
+}
