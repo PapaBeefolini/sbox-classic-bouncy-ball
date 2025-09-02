@@ -18,9 +18,6 @@ public sealed class BouncyBall : Component, Component.INetworkSpawn, Component.I
 	public SphereCollider Collider { get; private set; }
 	public SpriteRenderer SpriteRenderer { get; private set; }
 
-	[Sync, Change( "OnCurrentColorChanged" )]
-	public Color CurrentColor { get; private set; }
-
 	protected override void OnAwake()
 	{
 		Collider = GetComponent<SphereCollider>();
@@ -29,8 +26,6 @@ public sealed class BouncyBall : Component, Component.INetworkSpawn, Component.I
 
 	protected override void OnStart()
 	{
-		if ( IsProxy ) 
-			return;
 		SetRandomScale();
 		SetRandomColor();
 	}
@@ -53,7 +48,7 @@ public sealed class BouncyBall : Component, Component.INetworkSpawn, Component.I
 
 	private void SetRandomScale()
 	{
-		if ( !Collider.IsValid() )
+		if ( IsProxy || !Collider.IsValid() )
 			return;
 		WorldScale = Vector3.One * Game.Random.Float( 0.5f, 1.25f );
 		WorldPosition += Vector3.Up * Collider.Radius * WorldScale;
@@ -61,9 +56,18 @@ public sealed class BouncyBall : Component, Component.INetworkSpawn, Component.I
 
 	private void SetRandomColor()
 	{
-		if ( Colors.Length <= 0 )
+		if ( IsProxy || Colors.Length <= 0 || !SpriteRenderer.IsValid() )
 			return;
-		CurrentColor = Colors[Game.Random.Int( Colors.Length - 1 )];
+		Color color = Colors[Game.Random.Int( Colors.Length - 1 )];
+		SetColor( color );
+	}
+
+	[Rpc.Broadcast( NetFlags.OwnerOnly )]
+	private void SetColor( Color color )
+	{
+		if ( Colors.Length <= 0 || !SpriteRenderer.IsValid() )
+			return;
+		SpriteRenderer.Color = color;
 	}
 
 	private void KeepUpright()
@@ -95,12 +99,5 @@ public sealed class BouncyBall : Component, Component.INetworkSpawn, Component.I
 
 		if ( !IsProxy )
 			GameObject.Destroy();
-	}
-
-	private void OnCurrentColorChanged( Color oldValue, Color newValue )
-	{
-		if ( !SpriteRenderer.IsValid() )
-			return;
-		SpriteRenderer.Color = CurrentColor;
 	}
 }
